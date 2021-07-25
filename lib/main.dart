@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:avatar_glow/avatar_glow.dart';
+import 'package:clipboard/clipboard.dart';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:highlight_text/highlight_text.dart';
@@ -38,6 +39,7 @@ class _SpeechScreenState extends State<SpeechScreen> {
 
   late stt.SpeechToText speech;
   String promptText = "Press the button to start speaking";
+  String speechText = '';
   double confidence = 1.0;
 
   @override
@@ -52,18 +54,29 @@ class _SpeechScreenState extends State<SpeechScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: AvatarGlow(
-        endRadius: 75,
-        animate: isListening,
-        glowColor: Colors.red,
-        child: FloatingActionButton(
-          backgroundColor: Colors.red,
-          child: Icon(
-            isListening ? Icons.mic : Icons.mic_none,
-          ),
-          onPressed: listenToSpeech,
-        ),
+      floatingActionButton: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AvatarGlow(
+              endRadius: 75,
+              animate: isListening,
+              glowColor: Colors.red,
+              child: FloatingActionButton(
+                backgroundColor: Colors.red,
+                child: Icon(
+                  isListening ? Icons.mic : Icons.mic_none,
+                ),
+                onPressed: listenToSpeech,
+              ),
+            ),
+            SizedBox(width: 5),
+            FloatingActionButton(
+              elevation: speechText.isNotEmpty ? 6 : 1,
+              backgroundColor: speechText.isNotEmpty ? Colors.red : Colors.black12,
+              child: Icon(Icons.copy_rounded),
+              onPressed: textHighLight,
+            )
+          ],
       ),
       body: Column(
         children: [
@@ -102,6 +115,12 @@ class _SpeechScreenState extends State<SpeechScreen> {
     );
   }
 
+  void textHighLight(){
+    if(speechText.isNotEmpty){
+      FlutterClipboard.copy(speechText);
+    }
+  }
+
   void listenToSpeech() async {
     if (!isListening) {
       bool available = await speech.initialize(
@@ -121,6 +140,7 @@ class _SpeechScreenState extends State<SpeechScreen> {
         speech.listen(
           onResult: (val) => setState(() {
             promptText = val.recognizedWords;
+            speechText = val.recognizedWords;
             if (val.hasConfidenceRating && val.confidence > 0) {
               confidence = val.confidence;
             }
